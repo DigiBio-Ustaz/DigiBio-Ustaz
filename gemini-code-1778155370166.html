@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digi Bio: Ustaz AI</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .animate-scan { animation: scan 2s linear infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Иконкаларды қолдануға ыңғайлы функция
+        const Icon = ({ name, size = 24, className = "" }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home');
+            const [isDarkMode, setIsDarkMode] = useState(false);
+            const [user, setUser] = useState(null);
+            const [messages, setMessages] = useState([
+                { role: 'bot', text: 'Сәлеметсіз бе! Мен Ustaz AI көмекшісімін. Биология пәні бойынша қандай сұрағыңыз бар?' }
+            ]);
+            const [input, setInput] = useState('');
+            const messagesEndRef = useRef(null);
+
+            // Оқулықтар деректері
+            const textbooks = [
+                { grade: "7-сынып", books: [{ name: "Биология (Аймуханов Н.)", link: "https://okulyk.kz/biologija/1039/" }, { name: "Биология (Соловьева А.)", link: "https://okulyk.kz/biologija/245/" }] },
+                { grade: "8-сынып", books: [{ name: "Биология (Короткова И.)", link: "https://okulyk.kz/biologija/1069/" }] },
+                { grade: "9-сынып", books: [{ name: "Биология (Асанов Н.)", link: "https://okulyk.kz/biologija/402/" }] },
+                { grade: "10-сынып", books: [{ name: "Биология (Очкур А.)", link: "https://okulyk.com/10-klass/biologiya-10/3867/" }] }
+            ];
+
+            const handleSendMessage = () => {
+                if (!input.trim()) return;
+                setMessages([...messages, { role: 'user', text: input }, { role: 'bot', text: 'Жауап дайындалуда... (API кілтін қосыңыз)' }]);
+                setInput('');
+            };
+
+            return (
+                <div className={`flex flex-col h-screen max-w-md mx-auto shadow-2xl overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                    <main className="flex-1 overflow-y-auto p-4 pb-24 no-scrollbar">
+                        {activeTab === 'home' && (
+                            <div className="space-y-6 animate-in fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-2xl font-bold">Қайырлы күн!</h1>
+                                    <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-md">
+                                        <Icon name={isDarkMode ? "sun" : "moon"} />
+                                    </button>
+                                </div>
+
+                                <div onClick={() => setActiveTab('scanner')} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 p-8 rounded-3xl shadow-lg flex flex-col items-center cursor-pointer active:scale-95 transition-all">
+                                    <Icon name="qr-code" size={48} className="text-white mb-2" />
+                                    <span className="text-white font-bold text-xl">QR Сканер</span>
+                                </div>
+
+                                <div onClick={() => setActiveTab('ai')} className="p-6 rounded-[32px] bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl flex justify-between items-center cursor-pointer active:scale-95 transition-all">
+                                    <div className="flex items-center space-x-4">
+                                        <Icon name="sparkles" size={28} />
+                                        <div>
+                                            <h3 className="font-bold">Ustaz AI</h3>
+                                            <p className="text-xs opacity-80">Интеллектуалды көмекші</p>
+                                        </div>
+                                    </div>
+                                    <Icon name="chevron-right" />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'book' && (
+                            <div className="space-y-4 animate-in slide-in-from-bottom">
+                                <h2 className="text-xl font-bold">Сандық оқулықтар</h2>
+                                {textbooks.map((g, i) => (
+                                    <div key={i} className="space-y-2">
+                                        <span className="text-xs font-bold text-gray-400 uppercase">{g.grade}</span>
+                                        {g.books.map((b, bi) => (
+                                            <a key={bi} href={b.link} target="_blank" className="block p-4 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                                                <span className="text-sm font-medium">{b.name}</span>
+                                                <Icon name="external-link" size={16} className="text-blue-500" />
+                                            </a>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'ai' && (
+                            <div className="flex flex-col h-full space-y-4">
+                                <div className="flex-1 space-y-4 overflow-y-auto no-scrollbar">
+                                    {messages.map((m, i) => (
+                                        <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`p-3 rounded-2xl max-w-[80%] text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-white'}`}>
+                                                {m.text}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex space-x-2">
+                                    <input value={input} onChange={e => setInput(e.target.value)} className="flex-1 p-3 rounded-xl bg-white dark:bg-slate-800 border dark:border-slate-700 outline-none" placeholder="Сұрақ қойыңыз..." />
+                                    <button onClick={handleSendMessage} className="p-3 bg-indigo-600 text-white rounded-xl"><Icon name="send" size={20}/></button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'scanner' && (
+                            <div className="h-full bg-black rounded-3xl flex flex-col items-center justify-center space-y-4">
+                                <div className="w-48 h-48 border-2 border-emerald-500 rounded-3xl relative overflow-hidden">
+                                    <div className="absolute top-0 w-full h-1 bg-emerald-400 animate-scan"></div>
+                                </div>
+                                <button onClick={() => setActiveTab('home')} className="text-white underline">Артқа</button>
+                            </div>
+                        )}
+                    </main>
+
+                    <nav className={`fixed bottom-0 max-w-md w-full p-4 border-t flex justify-around ${isDarkMode ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'}`}>
+                        <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? "text-emerald-500" : ""}><Icon name="home" /><span className="text-[10px] block font-bold">Басты</span></button>
+                        <button onClick={() => setActiveTab('book')} className={activeTab === 'book' ? "text-emerald-500" : ""}><Icon name="book-open" /><span className="text-[10px] block font-bold">Оқулық</span></button>
+                        <button onClick={() => setActiveTab('ai')} className={activeTab === 'ai' ? "text-emerald-500" : ""}><Icon name="message-square" /><span className="text-[10px] block font-bold">Ustaz AI</span></button>
+                    </nav>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
